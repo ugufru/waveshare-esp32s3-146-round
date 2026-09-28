@@ -1,4 +1,4 @@
-{"rank": 1, "id": 3, "why": "Active: the new case supersedes most of the Thingiverse defects (4, 5, 7, 9).", "added": "2026-09-28"}
-{"rank": 2, "id": 12, "why": "The phase 1 print is the only way to retire the [?] values (cell thickness, standoff bore, preload) and decides whether issue 3 can close.", "added": "2026-09-28"}
-{"rank": 3, "id": 6, "why": "The new case is sealed with a LiPo inside; measure temperature on the first print before adding more.", "added": "2026-09-28"}
-{"rank": 4, "id": 2, "why": "Quick doc fix for the Thingiverse README; prevents someone buying the 1.46B.", "added": "2026-09-28"}
+{"rank": 1, "id": 15, "why": "The user's chosen first step: get the board fixed to a plate before anything else is built around it.", "added": "2026-09-28"}
+{"rank": 2, "id": 16, "why": "Needs measurements of the real module; the front is rebuilt onto the plate once 15 is confirmed.", "added": "2026-09-28"}
+{"rank": 3, "id": 3, "why": "Parent of the pocket-watch work; closes when plate and front v2 are confirmed.", "added": "2026-09-28"}
+{"rank": 4, "id": 6, "why": "Sealed case with a LiPo; measure temperature once a full case exists.", "added": "2026-09-28"}

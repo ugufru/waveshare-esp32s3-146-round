@@ -1,5 +1,22 @@
 # Pocket-watch case (issue 3)
 
+## Status, 2026-09-28
+
+The first print (PW-F v1, PW-B v1) did not take the module: its outline is
+not fully round near USB-C. The case is being rebuilt from the back forwards.
+
+**Backplate, PW-P v1 (`plate.stl`, issue 15).** The board screws to it
+through its three M2 standoffs. 54.0 across, 2.4 plate plus 2.59 seats (the
+seats lift the plate 0.55 clear of the header tips). Print outer face down,
+no supports. Screws: **3 x M2 x 8 countersunk** (the board's standoffs are
+M2, so the M2.5 screws do not fit them). The three M2.5 holes on the v1
+circle are for the next front. Checked against the STEP mesh: contact only
+at the seat faces.
+
+The v1 front and back below are kept for reference; issue 16 covers the
+front refit.
+
+
 A two-part case for the Waveshare ESP32-S3-Touch-LCD-1.46 (cover-glass
 version, SKU 29565) and a 20 x 30 mm LiPo pouch cell, with a crown and bow at
 12 o'clock for a chain or tether. Source is `pocketwatch.scad`; the STLs are

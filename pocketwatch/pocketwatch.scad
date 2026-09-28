@@ -339,7 +339,7 @@ module back() {
 
 /* ---------- board envelope (assembly view only) ---------------------- */
 
-module board_envelope() {
+module board_envelope(battery = true) {
     color("black") translate([0, 0, -lens_t]) cylinder(d = lens_d, h = lens_t);
     color("dimgray") translate([0, 0, -4.7]) cylinder(d = 40.8, h = 4.7 - lens_t);
     color("dimgray") translate([-tab_half_w, tab_y, tab_z[0]])
@@ -352,9 +352,76 @@ module board_envelope() {
         cube([5.5, 12.4, pcb_back_z - header_tip_z]);
     color("silver") translate([pwr_xy[0] - 2, pwr_xy[1] - 2, pwr_top_z])
         cube([4, 4, pcb_back_z - pwr_top_z]);
-    color("skyblue") translate([-bat_w/2, bat_cy - bat_h/2,
+    if (battery) color("skyblue") translate([-bat_w/2, bat_cy - bat_h/2,
                                 header_tip_z - bat_gap - bat_t])
         cube([bat_w, bat_h, bat_t]);
+}
+
+/* ---------- backplate (issue 15) ------------------------------------- */
+// The first print showed the module does not fit the v1 front, so the
+// case is being rebuilt from the back forwards. The board screws to this
+// plate through its three M2 standoffs, with the heads sunk into the
+// plate's outer face. Short seats lift the plate clear of the 2x10 header,
+// the deepest thing on the board. The M2.5 holes on the v1 screw circle
+// are kept so the next front can close onto this plate.
+
+bp_t        = 2.4;      // plate thickness
+bp_seat_d   = 5.4;      // seat under each standoff (standoff OD 3.5 [S])
+bp_header_clr = 0.55;   // header tips to plate face
+bp_seat_h   = standoff_tip_z - header_tip_z + bp_header_clr;
+bp_top_z    = standoff_tip_z - bp_seat_h;   // inner face of the plate
+bp_back_z   = bp_top_z - bp_t;              // outer face, on the bed
+
+// M2 countersunk (DIN 965 / ISO 7046): 3.8 head, 90 degree seat
+m2_len      = 8.0;      // [?] screw length, head included
+m2_clear_d  = 2.4;
+m2_head_d   = 3.8;
+m2_head_h   = (m2_head_d - m2_clear_d) / 2;    // 90 degrees
+m2_recess   = 0.5;      // sink the head below the face (pizero lesson)
+standoff_h  = pcb_back_z - standoff_tip_z;     // 3.51 [S], threaded through
+bp_ver      = "PW-P v1";
+
+m2_engage = m2_len - bp_t - bp_seat_h;
+echo(str("backplate: seat height ", bp_seat_h, ", inner face z ", bp_top_z,
+         ", outer face z ", bp_back_z));
+echo(str("backplate: M2 x ", m2_len, " engages ", m2_engage,
+         " mm of a ", standoff_h, " mm standoff"));
+assert(m2_engage > 1.5, "M2 screw too short for the standoffs");
+assert(m2_engage < standoff_h + 0.5, "M2 screw would hit the PCB back");
+
+module backplate() {
+    difference() {
+        union() {
+            translate([0, 0, bp_back_z]) hull() {
+                translate([0, 0, back_chamfer])
+                    cylinder(d = case_od, h = bp_t - back_chamfer);
+                cylinder(d = case_od - 2*back_chamfer, h = bp_t);
+            }
+            for (s = standoffs) translate([s[0], s[1], bp_top_z - eps])
+                cylinder(d = bp_seat_d, h = bp_seat_h + eps, $fn = 48);
+        }
+        // M2 countersunk holes through plate and seats into the standoffs
+        for (s = standoffs) translate([s[0], s[1], 0]) {
+            translate([0, 0, bp_back_z - eps])
+                cylinder(d = m2_clear_d, h = bp_t + bp_seat_h + 1, $fn = 24);
+            translate([0, 0, bp_back_z - eps])
+                cylinder(d = m2_head_d, h = m2_recess + eps, $fn = 48);
+            translate([0, 0, bp_back_z + m2_recess])
+                cylinder(d1 = m2_head_d, d2 = m2_clear_d, h = m2_head_h, $fn = 48);
+        }
+        // M2.5 holes on the v1 screw circle, for the next front
+        at_bosses() {
+            translate([0, 0, bp_back_z - eps])
+                cylinder(d = screw_clear_d, h = bp_t + 1, $fn = 24);
+            translate([0, 0, bp_back_z - eps])
+                cylinder(d = screw_head_d, h = screw_head_recess + eps, $fn = 48);
+            translate([0, 0, bp_back_z + screw_head_recess])
+                cylinder(d1 = screw_head_d, d2 = screw_clear_d,
+                         h = screw_head_h, $fn = 48);
+        }
+        // version, inner face, reads from the front
+        translate([0, bat_cy, bp_top_z - ver_d]) engrave(bp_ver);
+    }
 }
 
 /* ---------- output --------------------------------------------------- */
@@ -364,6 +431,11 @@ if (part == "front") {
     translate([0, 0, bezel_t]) rotate([0, 180, 0]) front();
 } else if (part == "back") {
     translate([0, 0, -back_z]) back();
+} else if (part == "plate") {
+    translate([0, 0, -bp_back_z]) backplate();
+} else if (part == "plate_assembly") {
+    color("lightsteelblue") backplate();
+    board_envelope(battery = false);
 } else if (part == "both") {
     translate([-case_od/2 - 6, 0, bezel_t]) rotate([0, 180, 0]) front();
     translate([ case_od/2 + 6, 0, -back_z]) back();
