@@ -13,6 +13,11 @@ M2, so the M2.5 screws do not fit them). The three M2.5 holes on the v1
 circle are for the next front. Checked against the STEP mesh: contact only
 at the seat faces.
 
+**Screwless backplate, PW-PP v1 (`plate_pins.stl`).** The M2 screws did not
+go into the board's standoffs, so their real thread is unknown. Same plate,
+no screw holes, and a 1.0 mm pin on each seat that drops into the standoff
+bore. The pins locate the board but do not hold it; the front clamps it.
+
 The v1 front and back below are kept for reference; issue 16 covers the
 front refit.
 

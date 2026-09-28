@@ -381,6 +381,16 @@ m2_recess   = 0.5;      // sink the head below the face (pizero lesson)
 standoff_h  = pcb_back_z - standoff_tip_z;     // 3.51 [S], threaded through
 bp_ver      = "PW-P v1";
 
+// Screwless variant (part="plate_pins"). The first M2 screws did not go
+// into the standoffs, so their real thread is unknown [?]. A 1.0 pin drops
+// into any of M1.6 (about 1.25 bore), M2 (about 1.6) or larger, so it
+// locates the board without depending on the thread. It does not hold the
+// board; the front clamps it once it closes onto the plate.
+pin_plate_d   = 1.0;
+pin_plate_len = 2.0;    // standoffs are 3.51 tall [S]
+pin_tip       = 0.3;    // 45 degree lead-in chamfer at the tip
+bpp_ver       = "PW-PP v1";
+
 m2_engage = m2_len - bp_t - bp_seat_h;
 echo(str("backplate: seat height ", bp_seat_h, ", inner face z ", bp_top_z,
          ", outer face z ", bp_back_z));
@@ -389,7 +399,7 @@ echo(str("backplate: M2 x ", m2_len, " engages ", m2_engage,
 assert(m2_engage > 1.5, "M2 screw too short for the standoffs");
 assert(m2_engage < standoff_h + 0.5, "M2 screw would hit the PCB back");
 
-module backplate() {
+module backplate(pins = false) {
     difference() {
         union() {
             translate([0, 0, bp_back_z]) hull() {
@@ -399,9 +409,15 @@ module backplate() {
             }
             for (s = standoffs) translate([s[0], s[1], bp_top_z - eps])
                 cylinder(d = bp_seat_d, h = bp_seat_h + eps, $fn = 48);
+            if (pins) for (s = standoffs) translate([s[0], s[1], standoff_tip_z - eps]) {
+                cylinder(d = pin_plate_d, h = pin_plate_len - pin_tip + eps, $fn = 24);
+                translate([0, 0, pin_plate_len - pin_tip])
+                    cylinder(d1 = pin_plate_d, d2 = pin_plate_d - 2*pin_tip,
+                             h = pin_tip, $fn = 24);
+            }
         }
         // M2 countersunk holes through plate and seats into the standoffs
-        for (s = standoffs) translate([s[0], s[1], 0]) {
+        if (!pins) for (s = standoffs) translate([s[0], s[1], 0]) {
             translate([0, 0, bp_back_z - eps])
                 cylinder(d = m2_clear_d, h = bp_t + bp_seat_h + 1, $fn = 24);
             translate([0, 0, bp_back_z - eps])
@@ -420,7 +436,7 @@ module backplate() {
                          h = screw_head_h, $fn = 48);
         }
         // version, inner face, reads from the front
-        translate([0, bat_cy, bp_top_z - ver_d]) engrave(bp_ver);
+        translate([0, bat_cy, bp_top_z - ver_d]) engrave(pins ? bpp_ver : bp_ver);
     }
 }
 
@@ -433,6 +449,8 @@ if (part == "front") {
     translate([0, 0, -back_z]) back();
 } else if (part == "plate") {
     translate([0, 0, -bp_back_z]) backplate();
+} else if (part == "plate_pins") {
+    translate([0, 0, -bp_back_z]) backplate(pins = true);
 } else if (part == "plate_assembly") {
     color("lightsteelblue") backplate();
     board_envelope(battery = false);
