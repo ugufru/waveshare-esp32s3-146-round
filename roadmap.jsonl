@@ -1,0 +1,5 @@
+{"rank": 1, "id": 3, "why": "Gates everything else: without a source model every fix below is mesh surgery.", "added": "2026-09-28"}
+{"rank": 2, "id": 4, "why": "Biggest functional defect. The board rattles and can rotate away from the USB window; the fix also decides how the lid attaches (issue 5).", "added": "2026-09-28"}
+{"rank": 3, "id": 7, "why": "Cheap test fit that can run now on the printed case and feeds the window size into the new model.", "added": "2026-09-28"}
+{"rank": 4, "id": 6, "why": "Thermal risk for a PLA case running Wi-Fi around the clock, and the README currently claims vents that do not exist.", "added": "2026-09-28"}
+{"rank": 5, "id": 2, "why": "Quick doc fix; prevents someone buying the 1.46B, which falls through the aperture.", "added": "2026-09-28"}
