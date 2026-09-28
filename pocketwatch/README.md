@@ -5,6 +5,13 @@
 The first print (PW-F v1, PW-B v1) did not take the module: its outline is
 not fully round near USB-C. The case is being rebuilt from the back forwards.
 
+**Back cup v1.0 (`back_cup.stl`), current.** Grown from PW-PP after its pins
+lined the board up. 38.1 (1.5 in) flat base, 2 mm wall curving up to a 46.8
+band, rim 0.2 below the back of the glass (inside floor to rim 11.7, 14.1
+tall). Notch at 6 o'clock for the display FPC and frame, with the 9.6 x 3.9
+USB-C opening below it. Pin holes for PWR and BOOT. "v1.0" is engraved on
+the inside floor. Print base down, no supports.
+
 **Backplate, PW-P v1 (`plate.stl`, issue 15).** The board screws to it
 through its three M2 standoffs. 54.0 across, 2.4 plate plus 2.59 seats (the
 seats lift the plate 0.55 clear of the header tips). Print outer face down,

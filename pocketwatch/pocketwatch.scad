@@ -440,6 +440,135 @@ module backplate(pins = false) {
     }
 }
 
+/* ---------- back cup v1.0 (issue 15) --------------------------------- */
+// Grows the pinned plate (PW-PP) into a pocket-watch back: a 1.5 inch
+// (38.1) flat base whose 2 mm edge curves up to a rim that meets the back
+// of the glass, 11.9 above the inside floor. The board still sits on the
+// three seats with pins in its standoffs.
+//
+// Outer profile, from the bed up: 45 degree flank from the flat base (no
+// overhang at the bed), a round into the vertical band, then straight up
+// to the rim. The wall is the same profile offset 2 mm inwards.
+//
+// Everything on the board beyond r 21.1 behind the glass is at the bottom
+// (6 o'clock) [S]: the display FPC and its frame, the PCB tab and USB-C.
+// The FPC and frame reach r 24.2, through the wall, and down to z -7.45,
+// which is 0.05 above the USB-C shell, so the bottom of the wall is a
+// notch with the USB-C opening below it rather than a closed hole.
+
+cup_base_d   = 38.1;    // flat of the back, 1.5 inch
+cup_wall     = 2.0;
+cup_od       = 46.8;    // band; inner 42.8 clears the lower-left standoff
+                        // (r 21.03 [S]) by 0.37 and the glass (44.78) sits
+                        // on the rim with 1.0 of band outside it
+cup_round    = 3.0;     // radius from the flank into the band
+glass_back_z = -lens_t; // -1.60 [S]
+cup_rim_gap  = 0.2;     // rim to glass back, so the seats set the height
+cup_top_z    = glass_back_z - cup_rim_gap;
+cup_ver      = "v1.0";
+cup_ver_size = 5.0;
+
+// bottom cuts [S], +0.4 clearance
+cup_notch_hw   = 10.6;  // through notch: FPC tab and frame, |x| < 10.2
+cup_notch_z    = -7.85; // notch floor (frame and PCB tab end at -7.45)
+cup_pocket_hw  = 13.9;  // frame shoulders |x| 10.2..13.4 reach r 22.28
+cup_pocket_r   = 22.6;  // leaves 0.8 of wall
+cup_low_hw     = 10.6;  // PCB tab and LEDs below the notch reach r 22.43
+cup_low_r      = 22.75; // leaves 0.65
+cup_low_z      = -11.3;
+usb_hole_w     = 9.6;   // shell 8.94 x 3.25 [S] + 0.3 per side
+usb_hole_h     = 3.9;
+usb_hole_r     = 1.5;
+
+// PWR and BOOT are side-actuated switches at the board edge, facing out
+// along these angles [S bounding boxes, direction from the photo, ?]
+btn_angles   = [34.7, -34.7];
+btn_z        = -8.1;    // [S] switch body mid-height
+btn_hole_d   = 2.6;
+
+cup_bed_z = bp_back_z;  // outer face of the floor, on the bed
+cup_h     = cup_top_z - cup_bed_z;
+echo(str("back cup: base ", cup_base_d, ", band ", cup_od, ", height ",
+         cup_h, ", inside floor to rim ", cup_top_z - bp_top_z));
+
+// Outer half-profile in (r, z from the bed), mirrored to a full section so
+// offset() does not eat the axis.
+function cup_profile(top = cup_h) =
+    let(rb = cup_base_d/2, ro = cup_od/2, R = cup_round,
+        cr = ro - R, zc = (ro - rb) - R + R*sqrt(2),   // fillet centre z
+        arc = [for (a = [-45 : 5 : 0]) [cr + R*cos(a), zc + R*sin(a)]])
+    concat([[0, 0], [rb, 0]], arc, [[ro, top], [0, top]]);
+
+module cup_section(inset = 0) {
+    // the cavity's section runs past the rim so the inset leaves it open
+    p = cup_profile(inset > 0 ? cup_h + 10 : cup_h);
+    offset(delta = -inset) union() {
+        polygon(p);
+        mirror([1, 0]) polygon(p);
+    }
+}
+
+module back_cup() {
+    difference() {
+        union() {
+            translate([0, 0, cup_bed_z]) rotate_extrude($fn = 128)
+                difference() {
+                    intersection() {
+                        cup_section();
+                        translate([0, -1]) square([100, cup_h + 1]);
+                    }
+                    // cavity: the profile offset inwards, above the floor
+                    intersection() {
+                        cup_section(cup_wall);
+                        translate([0, bp_t]) square([100, 100]);
+                    }
+                }
+            // seats and pins, as PW-PP
+            for (s = standoffs) translate([s[0], s[1], bp_top_z - eps])
+                cylinder(d = bp_seat_d, h = bp_seat_h + eps, $fn = 48);
+            for (s = standoffs) translate([s[0], s[1], standoff_tip_z - eps]) {
+                cylinder(d = pin_plate_d, h = pin_plate_len - pin_tip + eps, $fn = 24);
+                translate([0, 0, pin_plate_len - pin_tip])
+                    cylinder(d1 = pin_plate_d, d2 = pin_plate_d - 2*pin_tip,
+                             h = pin_tip, $fn = 24);
+            }
+        }
+        // through notch at 6 o'clock for the FPC tab and frame
+        translate([-cup_notch_hw, -cup_od, cup_notch_z])
+            cube([2*cup_notch_hw, cup_od - 15, 20]);   // y -46.8 .. -15
+        // inner pockets either side of and below the notch
+        intersection() {
+            union() {
+                translate([0, 0, cup_notch_z])
+                    cylinder(r = cup_pocket_r, h = 20);
+                translate([0, 0, cup_low_z])
+                    cylinder(r = cup_low_r, h = cup_notch_z - cup_low_z + eps);
+            }
+            union() {
+                translate([-cup_pocket_hw, -cup_od, cup_notch_z])
+                    cube([2*cup_pocket_hw, cup_od/2 + 10, 20]);
+                translate([-cup_low_hw, -cup_od, cup_low_z])
+                    cube([2*cup_low_hw, cup_od/2 + 10, 20]);
+            }
+            translate([-50, -50, -50]) cube([100, 50 - 10, 100]);  // y < -10
+        }
+        // USB-C opening, centred on the shell, open into the notch above
+        translate([0, 0, usb_z]) {
+            port_cut(usb_hole_w, usb_hole_h, usb_hole_r, -cup_od, -15);
+            translate([-usb_hole_w/2, -cup_od, 0])
+                cube([usb_hole_w, cup_od - 15, cup_notch_z - usb_z + eps]);
+        }
+        // PWR / BOOT pin holes
+        for (a = btn_angles) rotate(a) translate([15, 0, btn_z])
+            rotate([0, 90, 0]) cylinder(d = btn_hole_d, h = 15, $fn = 24);
+        // version on the inside floor, reads from the front
+        translate([0, -3, bp_top_z - ver_d])
+            linear_extrude(height = ver_d + eps)
+                text(cup_ver, size = cup_ver_size, halign = "center",
+                     valign = "center");
+    }
+}
+
 /* ---------- output --------------------------------------------------- */
 
 if (part == "front") {
@@ -451,6 +580,11 @@ if (part == "front") {
     translate([0, 0, -bp_back_z]) backplate();
 } else if (part == "plate_pins") {
     translate([0, 0, -bp_back_z]) backplate(pins = true);
+} else if (part == "back_cup") {
+    translate([0, 0, -cup_bed_z]) back_cup();
+} else if (part == "cup_assembly") {
+    color("lightsteelblue") back_cup();
+    board_envelope(battery = false);
 } else if (part == "plate_assembly") {
     color("lightsteelblue") backplate();
     board_envelope(battery = false);
