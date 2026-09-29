@@ -5,7 +5,8 @@
 The first print (PW-F v1, PW-B v1) did not take the module: its outline is
 not fully round near USB-C. The case is being rebuilt from the back forwards.
 
-**Back cup v1.0 (`back_cup.stl`), current.** Grown from PW-PP after its pins
+**Back cup v1.1 (`back_cup.stl`), current.** v1.1 adds a microSD slot at
+9 o'clock (the card goes in between the PCB and the display). Grown from PW-PP after its pins
 lined the board up. 38.1 (1.5 in) flat base, 2 mm wall curving up to a 46.8
 band, rim 0.2 below the back of the glass (inside floor to rim 11.7, 14.1
 tall). Notch at 6 o'clock for the display FPC and frame, with the 9.6 x 3.9

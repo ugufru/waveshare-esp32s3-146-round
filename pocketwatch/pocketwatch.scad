@@ -465,7 +465,7 @@ cup_round    = 3.0;     // radius from the flank into the band
 glass_back_z = -lens_t; // -1.60 [S]
 cup_rim_gap  = 0.2;     // rim to glass back, so the seats set the height
 cup_top_z    = glass_back_z - cup_rim_gap;
-cup_ver      = "v1.0";
+cup_ver      = "v1.1";   // v1.1: microSD slot
 cup_ver_size = 5.0;
 
 // bottom cuts [S], +0.4 clearance
@@ -485,6 +485,15 @@ usb_hole_r     = 1.5;
 btn_angles   = [34.7, -34.7];
 btn_z        = -8.1;    // [S] switch body mid-height
 btn_hole_d   = 2.6;
+
+// microSD. The TF socket is on the FRONT of the PCB, between the board and
+// the display, and the card goes in from the 9 o'clock edge (Waveshare
+// onboard-resources diagram, item 13). Socket x -18.0..-3.0, z -6.8..-4.33,
+// inner part y -7.51..6.05 [S]; card axis assumed at its centre.
+sd_y       = -0.73;     // [S] card axis
+sd_z       = [-6.9, -4.2];  // [S] socket z -6.8..-4.33, +0.1
+sd_w       = 12.6;      // card 11.0 + 0.8 per side
+sd_flare   = 1.2;       // 45 degree flare on the outside, for a fingernail
 
 cup_bed_z = bp_back_z;  // outer face of the floor, on the bed
 cup_h     = cup_top_z - cup_bed_z;
@@ -558,6 +567,20 @@ module back_cup() {
             translate([-usb_hole_w/2, -cup_od, 0])
                 cube([usb_hole_w, cup_od - 15, cup_notch_z - usb_z + eps]);
         }
+        // microSD slot at 9 o'clock, flared outwards
+        translate([0, sd_y, (sd_z[0] + sd_z[1])/2]) rotate([0, -90, 0])
+            hull() {
+                translate([0, 0, cup_od/2 - cup_wall - 1.5])
+                    linear_extrude(height = 0.01)
+                        square([sd_z[1] - sd_z[0], sd_w], center = true);
+                translate([0, 0, cup_od/2 - sd_flare])
+                    linear_extrude(height = 0.01)
+                        square([sd_z[1] - sd_z[0], sd_w], center = true);
+                translate([0, 0, cup_od/2 + 0.5])
+                    linear_extrude(height = 0.01)
+                        square([sd_z[1] - sd_z[0] + 2*(sd_flare + 0.5),
+                                sd_w + 2*(sd_flare + 0.5)], center = true);
+            }
         // PWR / BOOT pin holes
         for (a = btn_angles) rotate(a) translate([15, 0, btn_z])
             rotate([0, 90, 0]) cylinder(d = btn_hole_d, h = 15, $fn = 24);
