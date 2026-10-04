@@ -1,3 +1,2 @@
-{"rank": 1, "id": 22, "why": "Retires the biggest unknown (SPD2010 QSPI init); everything visible depends on it.", "added": "2026-10-01"}
-{"rank": 2, "id": 23, "why": "Second half of the screen; needed before LVGL input.", "added": "2026-10-01"}
-{"rank": 3, "id": 24, "why": "First usable UI layer, built on 22 and 23.", "added": "2026-10-01"}
+{"rank": 1, "id": 23, "why": "Second half of the screen; needed before LVGL input.", "added": "2026-10-01"}
+{"rank": 2, "id": 24, "why": "First usable UI layer, built on 22 and 23.", "added": "2026-10-01"}
