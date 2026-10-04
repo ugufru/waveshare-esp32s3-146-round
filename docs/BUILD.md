@@ -38,6 +38,22 @@ through PlatformIO so it uses the right Python and dependencies:
 pio pkg exec -p tool-esptoolpy -- esptool.py --chip esp32s3 --port /dev/cu.usbmodem101 flash_id
 ```
 
+## First firmware (issue 20)
+
+`src/main.cpp` is a USB serial hello: a banner with chip, flash and PSRAM
+sizes, then one line a second with uptime and free heap/PSRAM, repeating the
+banner every 10 s so it is visible whenever the monitor is opened. First run
+on 2026-10-04 (upload about 13 s):
+
+```
+chip ESP32-S3 rev 2, 2 cores @ 240 MHz
+flash 16777216 bytes @ 80000000 Hz
+psram 8388608 bytes (found)
+[80] up 83007 ms, heap free 350632, psram free 8385672
+```
+
+If `psram` says NOT FOUND, `board_build.arduino.memory_type` is wrong.
+
 ## USB
 
 There is no USB-UART bridge and no reset button. The S3's native USB (GPIO19/20)
