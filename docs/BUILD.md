@@ -36,7 +36,7 @@ it fails with `termios.error: (19, 'Operation not supported by device')`;
 there, read the port non-interactively instead:
 
 ```sh
-python3 -c "import serial,time;s=serial.Serial('/dev/cu.usbmodem101',115200,timeout=0.5);e=time.time()+12;b=b''
+python3 -c "import serial,time,glob;s=serial.Serial(glob.glob('/dev/cu.usbmodem*')[0],115200,timeout=0.5);e=time.time()+12;b=b''
 while time.time()<e: b+=s.read(4096)
 print(b.decode(errors='replace'))"
 ```
@@ -50,7 +50,7 @@ pio pkg exec -p tool-esptoolpy -- esptool.py --chip esp32s3 --port /dev/cu.usbmo
 
 ## First firmware (issue 20)
 
-`src/main.cpp` is a USB serial hello: a banner with chip, flash and PSRAM
+`src/main.cpp` started as a USB serial hello: a banner with chip, flash and PSRAM
 sizes, then one line a second with uptime and free heap/PSRAM, repeating the
 banner every 10 s so it is visible whenever the monitor is opened. First run
 on 2026-10-04 (upload about 13 s):
@@ -65,6 +65,12 @@ psram 8388608 bytes (found)
 If `psram` says NOT FOUND, `board_build.arduino.memory_type` is wrong.
 
 ## USB
+
+The port name is not stable: it was `/dev/cu.usbmodem101` on first plug-in
+and `/dev/cu.usbmodem1101` after a replug (macOS names it by USB location).
+`pio run -t upload` and `pio device monitor` auto-detect it, so leave
+`upload_port` unset; substitute the current name in the esptool commands
+below (`ls /dev/cu.usbmodem*`).
 
 There is no USB-UART bridge and no reset button. The S3's native USB (GPIO19/20)
 goes straight to the USB-C socket and shows up on macOS as
