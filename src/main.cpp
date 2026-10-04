@@ -1,11 +1,12 @@
 // Board bring-up: USB serial hello (issue 20), shared I2C bus and TCA9554
-// (issue 21), SPD2010 display test (issue 22).
+// (issue 21), SPD2010 display test (issue 22), touch test (issue 23).
 #include <Arduino.h>
 #include <Wire.h>
 
 #include "board_pins.h"
 #include "display.h"
 #include "expander.h"
+#include "touch.h"
 
 static void print_info() {
   Serial.printf("chip %s rev %d, %d cores @ %lu MHz\n", ESP.getChipModel(),
@@ -33,6 +34,7 @@ constexpr uint16_t RED = rgb565(255, 0, 0), GREEN = rgb565(0, 255, 0),
                    YELLOW = rgb565(255, 255, 0), GREY = rgb565(40, 40, 40),
                    BLACK = 0;
 
+static bool touch_ok = false;
 static uint16_t fill_color;
 static uint16_t solid(int, int) { return fill_color; }
 
@@ -102,16 +104,57 @@ void setup() {
   delay(200);
 
   display_test();
-  i2c_scan("after display init");  // does SPD2010 touch (0x53) appear now?
+  i2c_scan("after display init");  // SPD2010 touch (0x53) appears only now
+  touch_ok = touch_begin();
+  if (touch_ok) Serial.println("touch: ready, draw on the screen");
+}
+
+// Touch test: a dot under each finger, coordinates on serial. The canvas is
+// redrawn after 5 s without touch.
+static void dot(int cx, int cy, uint16_t c) {
+  constexpr int D = 8;
+  static uint16_t px[D * D];
+  for (auto &p : px) p = c;
+  // Align to 4 px in x/y in case the controller wants aligned windows.
+  int x0 = constrain((cx - D / 2) & ~3, 0, LCD_W - D);
+  int y0 = constrain((cy - D / 2) & ~3, 0, LCD_H - D);
+  display_draw(x0, y0, x0 + D, y0 + D, px);
 }
 
 void loop() {
-  static uint32_t n = 0;
-  Serial.printf("[%lu] up %lu ms, heap free %lu, psram free %lu\n", n++,
-                millis(), ESP.getFreeHeap(), ESP.getFreePsram());
-  if (n % 10 == 0) {
-    print_info();
-    i2c_scan("periodic");
+  static uint32_t n = 0, next_beat = 0, last_touch = 0;
+  static bool dirty = false;
+  static uint16_t last_x[TOUCH_MAX_POINTS], last_y[TOUCH_MAX_POINTS];
+
+  if (touch_ok) {
+    TouchPoint pts[TOUCH_MAX_POINTS];
+    const int k = touch_read(pts, TOUCH_MAX_POINTS);
+    for (int i = 0; i < k; i++) {
+      const uint16_t colors[] = {WHITE, RED, GREEN, BLUE, YELLOW};
+      if (pts[i].weight == 0) {
+        Serial.printf("touch: id %u up   x %3u y %3u\n", pts[i].id, pts[i].x, pts[i].y);
+        continue;
+      }
+      if (pts[i].id < TOUCH_MAX_POINTS && (pts[i].x != last_x[pts[i].id] || pts[i].y != last_y[pts[i].id])) {
+        Serial.printf("touch: id %u x %3u y %3u w %u (%d pt)\n", pts[i].id, pts[i].x, pts[i].y,
+                      pts[i].weight, k);
+        last_x[pts[i].id] = pts[i].x;
+        last_y[pts[i].id] = pts[i].y;
+      }
+      dot(pts[i].x, pts[i].y, colors[pts[i].id % 5]);
+      last_touch = millis();
+      dirty = true;
+    }
+    if (dirty && millis() - last_touch > 5000) {
+      display_fill(orientation);
+      dirty = false;
+    }
   }
-  delay(1000);
+
+  if ((int32_t)(millis() - next_beat) >= 0) {
+    next_beat = millis() + 10000;
+    Serial.printf("[%lu] up %lu ms, heap free %lu, touch irqs %lu\n", n++, millis(),
+                  ESP.getFreeHeap(), touch_irq_count());
+  }
+  delay(10);
 }
