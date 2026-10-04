@@ -80,14 +80,13 @@ touch and LCD resets, and again every 10 s:
 | 0x20 | TCA9554 expander | found [M] |
 | 0x51 | PCF85063 RTC | found [M] |
 | 0x6b | QMI8658 IMU (SA0 high) | found [M] |
-| 0x53 | SPD2010 touch | **not found** [M] |
+| 0x53 | SPD2010 touch | found only after display init [M] |
 
-The SPD2010 touch controller does not answer at any address, with resets
-pulsed low for 20 ms and released, then scanned at 200 ms and again 10 s
-later. Working theory, **not verified**: the SPD2010 is a single display and
-touch chip and its touch side does not respond until the display side has been
-initialised. Waveshare's example brings up the LCD before touch. Revisit once
-the display runs (issues 22, 23).
+The SPD2010 touch controller does not answer after TP_RST alone (pulsed low
+20 ms, scanned at 200 ms and again 10 s later). It appears at 0x53 once the
+display side has been reset and initialised over QSPI (issue 22). The SPD2010
+is a single display and touch chip: **initialise the display before touch**,
+as Waveshare's example does. [M]
 
 Register readback from the expander after init:
 
