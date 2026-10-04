@@ -1,6 +1,5 @@
 {"rank": 1, "id": 19, "why": "No board needed and everything else reads from it; it also surfaces the two bring-up traps (resets behind the I2C expander, the battery power latch) before any code is written.", "added": "2026-10-01"}
-{"rank": 2, "id": 20, "why": "Proves build, flash, monitor and recovery on this board before any driver work.", "added": "2026-10-01"}
-{"rank": 3, "id": 21, "why": "The display and touch resets sit on the expander, so this gates both.", "added": "2026-10-01"}
-{"rank": 4, "id": 22, "why": "Retires the biggest unknown (SPD2010 QSPI init); everything visible depends on it.", "added": "2026-10-01"}
-{"rank": 5, "id": 23, "why": "Second half of the screen; needed before LVGL input.", "added": "2026-10-01"}
-{"rank": 6, "id": 24, "why": "First usable UI layer, built on 22 and 23.", "added": "2026-10-01"}
+{"rank": 2, "id": 21, "why": "The display and touch resets sit on the expander, so this gates both.", "added": "2026-10-01"}
+{"rank": 3, "id": 22, "why": "Retires the biggest unknown (SPD2010 QSPI init); everything visible depends on it.", "added": "2026-10-01"}
+{"rank": 4, "id": 23, "why": "Second half of the screen; needed before LVGL input.", "added": "2026-10-01"}
+{"rank": 5, "id": 24, "why": "First usable UI layer, built on 22 and 23.", "added": "2026-10-01"}

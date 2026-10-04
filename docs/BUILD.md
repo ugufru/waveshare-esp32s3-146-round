@@ -31,6 +31,16 @@ pio run -t upload        # build and flash
 pio device monitor       # serial console (Ctrl-C to quit)
 ```
 
+`pio device monitor` needs a real terminal. Run from Claude Code's `!` prefix
+it fails with `termios.error: (19, 'Operation not supported by device')`;
+there, read the port non-interactively instead:
+
+```sh
+python3 -c "import serial,time;s=serial.Serial('/dev/cu.usbmodem101',115200,timeout=0.5);e=time.time()+12;b=b''
+while time.time()<e: b+=s.read(4096)
+print(b.decode(errors='replace'))"
+```
+
 esptool comes with the platform as the `tool-esptoolpy` package. Run it
 through PlatformIO so it uses the right Python and dependencies:
 
