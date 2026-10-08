@@ -1,2 +1,3 @@
 {"rank": 1, "id": 36, "why": "Small and waiting only on the screws in the post: it turns the printed v1.2 cup into a closed, held case. Settles the standoff thread, which contradicts Waveshare's drawing.", "added": "2026-10-08"}
 {"rank": 2, "id": 33, "why": "Blocked on a cell: do it as soon as one is connected. The battery path is the reason the power firmware exists and none of it has run on a cell yet; a wrong latch means a watch that dies when unplugged.", "added": "2026-10-07"}
+{"rank": 3, "id": 37, "why": "The last thing between the printed case and a watch that runs untethered: the cup has zero space behind the board today. Pairs with #33 (prove the battery firmware) and should follow #36 so the screw length is settled for the deeper cup.", "added": "2026-10-08"}
