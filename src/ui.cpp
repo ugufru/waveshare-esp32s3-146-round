@@ -13,10 +13,13 @@
 static lv_obj_t *value_label;
 static lv_obj_t *tap_label;
 static lv_obj_t *time_label;
+static lv_obj_t *bat_label;
 static uint32_t taps = 0;
+static int brightness = 60;
 
 static void on_arc(lv_event_t *e) {
   const int v = lv_arc_get_value(lv_event_get_target(e));
+  brightness = v;
   display_backlight(v);
   lv_label_set_text_fmt(value_label, "%d%%", v);
 }
@@ -74,4 +77,30 @@ void ui_build() {
   lv_label_set_text(time_label, "00:00");
   lv_obj_align(time_label, LV_ALIGN_TOP_MID, 0, 70);
   lv_timer_create(on_tick, 1000, nullptr);
+
+  bat_label = lv_label_create(scr);
+  lv_obj_set_style_text_color(bat_label, lv_color_hex(0x8a94a0), 0);
+  lv_label_set_text(bat_label, "bat --");
+  lv_obj_align(bat_label, LV_ALIGN_BOTTOM_MID, 0, -40);
 }
+
+void ui_set_battery(float volts, int percent) {
+  lv_label_set_text_fmt(bat_label, "bat %d.%02d V  %d%%", (int)volts,
+                        (int)(volts * 100 + 0.5f) % 100, percent);
+}
+
+void ui_show_message(const char *text) {
+  lv_obj_t *cover = lv_obj_create(lv_layer_top());
+  lv_obj_set_size(cover, LV_PCT(100), LV_PCT(100));
+  lv_obj_set_style_bg_color(cover, lv_color_hex(0x000000), 0);
+  lv_obj_set_style_border_width(cover, 0, 0);
+  lv_obj_t *l = lv_label_create(cover);
+  lv_obj_set_style_text_font(l, &lv_font_montserrat_28, 0);
+  lv_obj_set_style_text_color(l, lv_color_hex(0xffffff), 0);
+  lv_obj_set_style_text_align(l, LV_TEXT_ALIGN_CENTER, 0);
+  lv_label_set_text(l, text);
+  lv_obj_center(l);
+  lv_refr_now(nullptr);
+}
+
+int ui_brightness() { return brightness; }
