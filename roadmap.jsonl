@@ -1,2 +1,2 @@
-{"rank": 1, "id": 16, "why": "Hardware track, can run alongside firmware: the back cup fits (15) but nothing holds the glass until a front closes onto it. Starts with measuring what fouled v1, not remodelling.", "added": "2026-10-07"}
+{"rank": 1, "id": 36, "why": "Small and waiting only on the screws in the post: it turns the printed v1.2 cup into a closed, held case. Settles the standoff thread, which contradicts Waveshare's drawing.", "added": "2026-10-08"}
 {"rank": 2, "id": 33, "why": "Blocked on a cell: do it as soon as one is connected. The battery path is the reason the power firmware exists and none of it has run on a cell yet; a wrong latch means a watch that dies when unplugged.", "added": "2026-10-07"}
