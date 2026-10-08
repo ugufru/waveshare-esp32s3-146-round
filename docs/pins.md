@@ -99,6 +99,38 @@ tca9554 @0x20 (resets released): in 0xff out 0xff pol 0x00 cfg 0xf8
 The input register follows the outputs (0xfc while held low), so P0 and P1
 really drive their pins. [M]
 
+## Power
+
+Read from the schematic's power section (page 1, top) on 2026-10-07 [S]:
+
+- The cell (BAT) reaches VCC through two P-MOSFETs in series. **Q1**
+  (AO3401) has its gate pulled up to BAT by R2 100k, so it is off by default.
+  **Q2** (AO3401) has USB_5V on its gate (R12 100k to GND), so it is off
+  while USB is present: on USB the cell is disconnected from VCC and only
+  charged.
+- Q1's gate is pulled low (on) by either the **PWR key** (Key1, through D4)
+  or **T1** (8050 NPN) when **BAT_Control (IO7)** is high (R7 1k, R10 10k
+  base pull-down). This is the power-hold latch.
+- **Key_BAT (IO6)** is pulled up to 3V3 by R1 10k and pulled low through D1
+  while PWR is pressed. Active low; no internal pull needed.
+- **BAT_ADC (IO8)** is BAT through 200k/100k: Vbat = 3 x Vadc.
+- VCC feeds the MP1605 3.3 V buck (U4, EN tied to VIN, 2.3..5.5 V in).
+- The **ETA6098** charger's STAT pin only drives the charge LED (LED from BAT
+  through R6 3k). The firmware cannot read charge state.
+
+Firmware (src/power.cpp, issue 25):
+
+- `power_begin()` runs first in `setup()`, drives IO7 high on every boot and
+  sets `gpio_hold_en` on it so a software reset or panic keeps the latch. On
+  battery, PWR must be held until this runs (Arduino start-up is a few
+  hundred ms; hold about 1 s).
+- Short PWR press: event for the app (the demo toggles the backlight). Held
+  2 s: power off. Dropping IO7 turns the board off on battery once PWR is
+  released; on USB nothing changes, so after 500 ms the board goes to deep
+  sleep with ext0 wake on IO6 low. [M on USB]
+- With USB and **no cell**, BAT reads about 4.16 V: that is the charger's
+  output with nothing attached, not a battery. [M]
+
 ## Bring-up gotchas
 
 - **Resets behind I2C.** The LCD and touch resets are expander outputs, so
