@@ -1,6 +1,7 @@
 // Board bring-up and demo. Start-up order matters (docs/pins.md):
 // I2C -> TCA9554 expander (holds the LCD and touch resets) -> display ->
-// touch (the SPD2010 touch side answers only once the display is up) -> LVGL.
+// touch (the SPD2010 touch side answers only once the display is up) -> RTC,
+// IMU -> LVGL.
 // The raw display and touch test patterns of issues 22 and 23 are in git
 // history (commit 6139609).
 #include <Arduino.h>
@@ -9,8 +10,10 @@
 #include "board_pins.h"
 #include "display.h"
 #include "expander.h"
+#include "imu.h"
 #include "lvgl_port.h"
 #include "power.h"
+#include "rtc.h"
 #include "touch.h"
 #include "ui.h"
 
@@ -34,6 +37,32 @@ static void i2c_scan(const char *when) {
 }
 
 static bool ok = false;
+static bool imu_ok = false;
+
+// Serial commands, one per line:
+//   t <unix_utc> <offset_min>   set the RTC (offset a multiple of 15)
+// From the Mac: printf 't %d %d\n' $(date +%s) <offset> > /dev/cu.usbmodem101
+static void serial_commands() {
+  static char line[64];
+  static size_t len = 0;
+  while (Serial.available()) {
+    const char c = Serial.read();
+    if (c != '\n' && c != '\r') {
+      if (len < sizeof line - 1) line[len++] = c;
+      continue;
+    }
+    line[len] = 0;
+    len = 0;
+    long long utc;
+    int off;
+    if (sscanf(line, "t %lld %d", &utc, &off) == 2 && off % 15 == 0 && off >= -720 && off <= 840) {
+      const bool w = rtc_set((time_t)utc, off);
+      Serial.printf("rtc: set %lld UTC offset %+d min: %s\n", utc, off, w ? "ok" : "I2C error");
+    } else if (line[0]) {
+      Serial.printf("? '%s' (commands: t <unix_utc> <offset_min>)\n", line);
+    }
+  }
+}
 
 void setup() {
   power_begin();  // first: on battery the board stays on only once this latches
@@ -51,6 +80,8 @@ void setup() {
   if (!display_begin()) { Serial.println("display: FAILED"); return; }
   if (!touch_begin()) return;
   i2c_scan("after init");
+  rtc_begin();
+  imu_ok = imu_begin();
   if (!lvgl_port_begin()) return;
 
   ui_build();
@@ -77,6 +108,23 @@ void loop() {
       power_off();
     case KeyEvent::None:
       break;
+  }
+
+  serial_commands();
+
+  static uint32_t next_imu = 0, next_imu_log = 0;
+  if (imu_ok && (int32_t)(millis() - next_imu) >= 0) {
+    next_imu = millis() + 33;
+    ImuSample m;
+    if (imu_read(m)) {
+      ui_set_tilt(m.ax, m.ay);  // axis mapping to the screen: to be measured
+      if ((int32_t)(millis() - next_imu_log) >= 0) {
+        next_imu_log = millis() + 1000;
+        Serial.printf("imu: a %+.3f %+.3f %+.3f g |a| %.3f  g %+7.2f %+7.2f %+7.2f dps  %.1f C\n",
+                      m.ax, m.ay, m.az, sqrtf(m.ax * m.ax + m.ay * m.ay + m.az * m.az),
+                      m.gx, m.gy, m.gz, m.temp_c);
+      }
+    }
   }
 
   static uint32_t next_bat = 0;

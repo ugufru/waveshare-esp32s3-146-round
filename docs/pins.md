@@ -79,7 +79,7 @@ touch and LCD resets, and again every 10 s:
 | --- | --- | --- |
 | 0x20 | TCA9554 expander | found [M] |
 | 0x51 | PCF85063 RTC | found [M] |
-| 0x6b | QMI8658 IMU (SA0 high) | found [M] |
+| 0x6b | QMI8658 IMU | found [M]; SA0 is tied to GND [S], which on the QMI8658 selects 0x6B (the reverse of most parts) |
 | 0x53 | SPD2010 touch | found only after display init [M] |
 
 The SPD2010 touch controller does not answer after TP_RST alone (pulsed low

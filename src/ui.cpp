@@ -1,6 +1,8 @@
 // A round-screen demo that exercises display, touch and LVGL together:
 // a brightness arc around the rim (dragging it drives the real backlight),
-// the value in the centre, a tap counter button, and uptime at 12 o'clock.
+// the value in the centre, a tap counter button, local time and date at
+// 12 o'clock (from the RTC, issue 26) and a bubble-level dot driven by the
+// IMU.
 // Panel row 0 is 12 o'clock in the pocket-watch case (issue 22), so the
 // arc's gap sits at 6 o'clock over the USB-C port.
 #include "ui.h"
@@ -9,11 +11,14 @@
 #include <lvgl.h>
 
 #include "display.h"
+#include "rtc.h"
 
 static lv_obj_t *value_label;
 static lv_obj_t *tap_label;
 static lv_obj_t *time_label;
 static lv_obj_t *bat_label;
+static lv_obj_t *date_label;
+static lv_obj_t *bubble;
 static uint32_t taps = 0;
 static int brightness = 60;
 
@@ -29,8 +34,19 @@ static void on_tap(lv_event_t *) {
 }
 
 static void on_tick(lv_timer_t *) {
-  const uint32_t s = millis() / 1000;
-  lv_label_set_text_fmt(time_label, "%02lu:%02lu", s / 60, s % 60);
+  if (!rtc_valid()) {
+    lv_label_set_text(time_label, "--:--:--");
+    lv_label_set_text(date_label, "time not set");
+    return;
+  }
+  static const char *mon[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                              "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+  static const char *wday[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+  const time_t local = time(nullptr) + rtc_offset_min() * 60;
+  tm t;
+  gmtime_r(&local, &t);
+  lv_label_set_text_fmt(time_label, "%02d:%02d:%02d", t.tm_hour, t.tm_min, t.tm_sec);
+  lv_label_set_text_fmt(date_label, "%s %d %s", wday[t.tm_wday], t.tm_mday, mon[t.tm_mon]);
 }
 
 void ui_build() {
@@ -74,9 +90,23 @@ void ui_build() {
   time_label = lv_label_create(scr);
   lv_obj_set_style_text_font(time_label, &lv_font_montserrat_28, 0);
   lv_obj_set_style_text_color(time_label, lv_color_hex(0xffffff), 0);
-  lv_label_set_text(time_label, "00:00");
-  lv_obj_align(time_label, LV_ALIGN_TOP_MID, 0, 70);
-  lv_timer_create(on_tick, 1000, nullptr);
+  lv_label_set_text(time_label, "--:--:--");
+  lv_obj_align(time_label, LV_ALIGN_TOP_MID, 0, 62);
+
+  date_label = lv_label_create(scr);
+  lv_obj_set_style_text_color(date_label, lv_color_hex(0x8a94a0), 0);
+  lv_label_set_text(date_label, "");
+  lv_obj_align(date_label, LV_ALIGN_TOP_MID, 0, 98);
+  lv_timer_create(on_tick, 250, nullptr);
+
+  bubble = lv_obj_create(scr);
+  lv_obj_set_size(bubble, 18, 18);
+  lv_obj_set_style_radius(bubble, LV_RADIUS_CIRCLE, 0);
+  lv_obj_set_style_bg_color(bubble, lv_color_hex(0x40c0ff), 0);
+  lv_obj_set_style_border_width(bubble, 0, 0);
+  lv_obj_clear_flag(bubble, LV_OBJ_FLAG_CLICKABLE);
+  lv_obj_align(bubble, LV_ALIGN_CENTER, 0, 0);
+  lv_obj_move_background(bubble);
 
   bat_label = lv_label_create(scr);
   lv_obj_set_style_text_color(bat_label, lv_color_hex(0x8a94a0), 0);
@@ -104,3 +134,11 @@ void ui_show_message(const char *text) {
 }
 
 int ui_brightness() { return brightness; }
+
+void ui_set_tilt(float x, float y) {
+  // 1 g of tilt moves the dot 150 px; clamp inside the ring.
+  float px = x * 150, py = y * 150;
+  const float r = sqrtf(px * px + py * py), rmax = 160;
+  if (r > rmax) { px *= rmax / r; py *= rmax / r; }
+  lv_obj_align(bubble, LV_ALIGN_CENTER, (lv_coord_t)px, (lv_coord_t)py);
+}

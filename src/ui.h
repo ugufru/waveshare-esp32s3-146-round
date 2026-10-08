@@ -11,3 +11,6 @@ void ui_show_message(const char *text);
 
 // Current brightness set on the ring, 5..100.
 int ui_brightness();
+
+// Bubble-level dot: tilt in g along the screen's x (right) and y (down) axes.
+void ui_set_tilt(float x, float y);
