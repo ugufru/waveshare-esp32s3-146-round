@@ -110,6 +110,11 @@ really drive their pins. [M]
 - **Strapping pins.** IO45 and IO46 carry LCD data and are also strapping
   pins; IO0 and IO3 are too. Nothing should hold them at a non-default level
   during reset.
+- **Touch press state.** Take press/release from the touch point reports
+  (weight > 0 / weight 0), not from the status register's pt_exist bit, which
+  drops for one read just after every touch starts (issue 24).
+- **Display windows.** SPD2010 draw windows need x start and width in
+  multiples of 4 pixels (LVGL rounder in src/lvgl_port.cpp).
 - **PSRAM pins.** GPIO33..37 belong to the octal PSRAM.
 - **Flash.** The schematic says W25Q128; this unit has an XMC part (JEDEC
   manufacturer 0x20, see docs/BUILD.md). Same size and mode.

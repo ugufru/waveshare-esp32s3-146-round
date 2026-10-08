@@ -27,8 +27,19 @@ static uint16_t *strip[2] = {nullptr, nullptr};
 // Counts strip buffers not owned by an in-flight transfer.
 static SemaphoreHandle_t free_bufs = nullptr;
 
+// One-shot completion hook for display_draw_async(); when unset, a finished
+// transfer releases a strip buffer instead.
+static void (*volatile async_done)(void *) = nullptr;
+static void *volatile async_ctx = nullptr;
+
 static bool IRAM_ATTR on_color_done(esp_lcd_panel_io_handle_t, esp_lcd_panel_io_event_data_t *,
                                     void *) {
+  if (async_done) {
+    void (*cb)(void *) = async_done;
+    async_done = nullptr;
+    cb(async_ctx);
+    return false;
+  }
   BaseType_t woken = pdFALSE;
   xSemaphoreGiveFromISR(free_bufs, &woken);
   return woken == pdTRUE;
@@ -48,10 +59,6 @@ bool display_begin() {
   delay(50);
 
   free_bufs = xSemaphoreCreateCounting(2, 2);
-  for (auto &s : strip) {
-    s = (uint16_t *)heap_caps_malloc(STRIP_BYTES, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-    if (!s) { Serial.println("display: strip alloc failed"); return false; }
-  }
 
   // The driver's SPD2010_PANEL_*_CONFIG macros use C designated-initialiser
   // order that C++ rejects, so the same values are set field by field.
@@ -103,6 +110,17 @@ void display_backlight(uint8_t percent) {
   ledcWrite(PIN_LCD_BL, (uint32_t)percent * ((1 << BL_PWM_BITS) - 1) / 100);
 }
 
+// Strip buffers for the blocking calls, allocated on first use so that a
+// program drawing only through display_draw_async (LVGL) does not pay 66 KB
+// of internal RAM for them.
+static bool strips_ready() {
+  for (auto &b : strip) {
+    if (!b) b = (uint16_t *)heap_caps_malloc(STRIP_BYTES, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    if (!b) { Serial.println("display: strip alloc failed"); return false; }
+  }
+  return true;
+}
+
 // Wait until both strip buffers are idle (no transfer in flight).
 static void wait_idle() {
   xSemaphoreTake(free_bufs, portMAX_DELAY);
@@ -112,6 +130,7 @@ static void wait_idle() {
 }
 
 void display_draw(int x0, int y0, int x1, int y1, const uint16_t *pixels) {
+  if (!strips_ready()) return;
   const int w = x1 - x0;
   const int rows_per = STRIP_ROWS * LCD_W / w;  // fill a strip buffer
   int b = 0;
@@ -126,6 +145,7 @@ void display_draw(int x0, int y0, int x1, int y1, const uint16_t *pixels) {
 }
 
 uint32_t display_fill(uint16_t (*pixel)(int x, int y)) {
+  if (!strips_ready()) return 0;
   const uint32_t t0 = micros();
   int b = 0;
   for (int y = 0; y < LCD_H; y += STRIP_ROWS, b ^= 1) {
@@ -138,4 +158,11 @@ uint32_t display_fill(uint16_t (*pixel)(int x, int y)) {
   }
   wait_idle();
   return micros() - t0;
+}
+
+void display_draw_async(int x0, int y0, int x1, int y1, const void *bus_pixels,
+                        void (*done)(void *), void *ctx) {
+  async_ctx = ctx;
+  async_done = done;
+  esp_lcd_panel_draw_bitmap(panel, x0, y0, x1, y1, bus_pixels);
 }

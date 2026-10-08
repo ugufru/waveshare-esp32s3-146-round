@@ -16,6 +16,15 @@ void display_backlight(uint8_t percent);
 // RGB565; byte swapping for the bus is done here.
 void display_draw(int x0, int y0, int x1, int y1, const uint16_t *pixels);
 
+// Start a DMA draw of pixels already in bus byte order (big-endian RGB565,
+// e.g. LVGL with LV_COLOR_16_SWAP) and return at once; done(ctx) runs from
+// the SPI interrupt when the transfer ends. The buffer must stay valid and
+// DMA-capable until then. x1/y1 exclusive. Do not mix with the blocking
+// calls while a transfer is in flight. The SPD2010 wants x0 and x1 multiples
+// of 4 (Waveshare's LVGL rounder).
+void display_draw_async(int x0, int y0, int x1, int y1, const void *bus_pixels,
+                        void (*done)(void *), void *ctx);
+
 // Fill the whole screen, strip by strip, with a per-pixel colour function.
 // Returns the elapsed time in microseconds.
 uint32_t display_fill(uint16_t (*pixel)(int x, int y));

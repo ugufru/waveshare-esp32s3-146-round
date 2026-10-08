@@ -19,8 +19,13 @@ bool touch_begin();
 
 // Runs one step of the controller's state machine and returns the number of
 // points in this report (0 when nothing is touching or no report is ready).
-// Call it regularly (every 10..20 ms); it is cheap when INT has not fired.
+// Call it regularly (every 10..20 ms): it reads the status register on every
+// call, as the reference drivers do (issue 31 is about keying off INT).
 int touch_read(TouchPoint *pts, int max_pts);
+
+// True while a finger is on the panel: set by a point report, cleared by the
+// lift report (weight 0). Stays set while a finger is held still.
+bool touch_down();
 
 // Count of INT falling edges seen since boot (diagnostic).
 uint32_t touch_irq_count();

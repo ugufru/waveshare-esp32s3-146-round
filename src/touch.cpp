@@ -23,6 +23,17 @@ static void IRAM_ATTR on_int() {
 
 uint32_t touch_irq_count() { return irq_count; }
 
+// Press state, latched from point reports (weight > 0 down, weight 0 lift).
+// Not taken from the status register's pt_exist bit: that drops to 0 for one
+// read 10..25 ms after the first report of every touch, which made LVGL see
+// press-release-press and count each tap twice (measured, issue 24). pt_exist
+// only serves as a fallback release if it stays clear for RELEASE_MS, in case a
+// lift report is ever lost.
+constexpr uint32_t RELEASE_MS = 150;
+static bool down = false;
+static uint32_t pt_seen_ms = 0;  // last time the status showed pt_exist
+bool touch_down() { return down; }
+
 static bool reg_write(uint16_t reg, const uint8_t *data = nullptr, int len = 0) {
   Wire.beginTransmission(TOUCH_ADDR);
   Wire.write(reg >> 8);
@@ -88,6 +99,8 @@ int touch_read(TouchPoint *pts, int max_pts) {
   const bool pt_exist = s[0] & 0x01, gesture = s[0] & 0x02, aux = s[0] & 0x08;
   const bool in_bios = s[1] & 0x40, in_cpu = s[1] & 0x20, cpu_run = s[1] & 0x08;
   const uint16_t read_len = s[3] << 8 | s[2];
+  if (pt_exist) pt_seen_ms = millis();
+  else if (down && millis() - pt_seen_ms > RELEASE_MS) down = false;
 #ifdef TOUCH_DEBUG
   static uint32_t last_status = 0xFFFFFFFF;
   const uint32_t st = (uint32_t)s[0] | s[1] << 8 | s[2] << 16 | (uint32_t)s[3] << 24;
@@ -125,6 +138,7 @@ int touch_read(TouchPoint *pts, int max_pts) {
         pts[n].x = ((r[3] & 0xF0) << 4) | r[1];
         pts[n].y = ((r[3] & 0x0F) << 8) | r[2];
         pts[n].weight = r[4];
+        if (i == 0) down = pts[n].weight > 0;
         n++;
       }
     }
