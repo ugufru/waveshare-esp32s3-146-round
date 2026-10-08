@@ -1,14 +1,17 @@
-// Registers from the PCF85063A datasheet: 0x00 Control_1, 0x03 RAM_byte,
-// 0x04..0x0A seconds, minutes, hours, days, weekdays, months, years (BCD).
-// Seconds bit 7 is OS, the oscillator-stop flag.
+// Registers from the PCF85063A datasheet: 0x00 Control_1, 0x04..0x0A
+// seconds, minutes, hours, days, weekdays, months, years (BCD). Seconds bit 7
+// is OS, the oscillator-stop flag. The local offset is kept in NVS, not in
+// the RTC's RAM byte: without a backup cell the RTC loses its RAM along with
+// the time on power loss, and NTP then restored the time with offset 0.
 #include "rtc.h"
 
 #include <Arduino.h>
+#include <Preferences.h>
 #include <Wire.h>
 #include <sys/time.h>
 
 constexpr uint8_t ADDR = 0x51;
-enum : uint8_t { CONTROL_1 = 0x00, RAM_BYTE = 0x03, SECONDS = 0x04 };
+enum : uint8_t { CONTROL_1 = 0x00, SECONDS = 0x04 };
 
 static int offset_min = 0;
 static bool valid = false;
@@ -30,13 +33,24 @@ static void set_system_clock(time_t utc) {
   settimeofday(&tv, nullptr);
 }
 
+static void save_offset(int off) {
+  Preferences p;
+  p.begin("time", false);
+  p.putShort("offset_min", off);
+  p.end();
+}
+
 bool rtc_begin() {
-  uint8_t c1, ram, t[7];
-  if (!rd(CONTROL_1, &c1, 1) || !rd(RAM_BYTE, &ram, 1) || !rd(SECONDS, t, 7)) {
+  Preferences p;
+  p.begin("time", true);
+  offset_min = p.getShort("offset_min", 0);
+  p.end();
+
+  uint8_t c1, t[7];
+  if (!rd(CONTROL_1, &c1, 1) || !rd(SECONDS, t, 7)) {
     Serial.println("rtc: no answer at 0x51");
     return false;
   }
-  offset_min = (int8_t)ram * 15;
   valid = !(t[0] & 0x80) && !(c1 & 0x20);  // OS clear and clock not stopped
   tm tmv = {};
   tmv.tm_sec = bcd2bin(t[0] & 0x7F);
@@ -58,8 +72,7 @@ bool rtc_set(time_t utc, int off) {
   tm tmv;
   gmtime_r(&utc, &tmv);
   Wire.beginTransmission(ADDR);
-  Wire.write(RAM_BYTE);
-  Wire.write((uint8_t)(int8_t)(off / 15));
+  Wire.write(SECONDS);
   Wire.write(bin2bcd(tmv.tm_sec));  // OS bit 0: clears the stop flag
   Wire.write(bin2bcd(tmv.tm_min));
   Wire.write(bin2bcd(tmv.tm_hour));
@@ -68,6 +81,7 @@ bool rtc_set(time_t utc, int off) {
   Wire.write(bin2bcd(tmv.tm_mon + 1));
   Wire.write(bin2bcd(tmv.tm_year - 100));
   if (Wire.endTransmission() != 0) return false;
+  if (off != offset_min) save_offset(off);
   offset_min = off;
   valid = true;
   set_system_clock(utc);

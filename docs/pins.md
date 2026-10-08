@@ -138,8 +138,8 @@ Firmware (src/power.cpp, issue 25):
   while the board has power: always on USB (the 3.3 V buck is always on,
   deep sleep included), but a full power-off on battery loses it. Its
   oscillator-stop flag (seconds bit 7) reports that. Firmware keeps UTC in the
-  time registers and the local offset, in 15-minute steps, in the one RAM
-  byte (0x03). Set it over serial with `t <unix_utc> <offset_min>`; held
+  time registers and the local offset in NVS: the RAM byte (0x03) is lost
+  with the time on power loss, which reset the offset to 0 once (issue 28). Set it over serial with `t <unix_utc> <offset_min>`; held
   through a reset [M].
 - **QMI8658 IMU (0x6B):** WHO_AM_I 0x05, revision 0x05 [M]. Axes relative to
   the screen [M]: **+x towards 12 o'clock, +y towards 3 o'clock, +z out of

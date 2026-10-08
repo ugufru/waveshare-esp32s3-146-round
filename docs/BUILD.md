@@ -48,6 +48,32 @@ through PlatformIO so it uses the right Python and dependencies:
 pio pkg exec -p tool-esptoolpy -- esptool.py --chip esp32s3 --port /dev/cu.usbmodem101 flash_id
 ```
 
+## Serial commands
+
+Typed into the serial port, one per line (src/main.cpp `run_command`):
+
+| Command | Does |
+| --- | --- |
+| `t <unix_utc> <offset_min>` | set the RTC and the local offset (multiple of 15) |
+| `tz <offset_min>` | change only the offset; kept in NVS |
+| `wifi "<ssid>" "<password>"` | store Wi-Fi credentials in NVS and connect; never echoed |
+| `wifi` / `wifi clear` / `wifi reconnect` | status / forget / drop and rejoin after 30 s |
+| `ntp` | SNTP status, server reachability, DNS servers |
+| `ntptest` | one plain-UDP NTP query per server; needs a build with `-DNTP_MANUAL_TEST` |
+
+From a Mac terminal, for example (port name varies):
+
+```sh
+printf 't %d -240\n' $(date +%s) > /dev/cu.usbmodem101
+printf '%s\n' 'wifi "SSID" "PASSWORD"' > /dev/cu.usbmodem101
+```
+
+Wi-Fi credentials and the offset live in NVS, which an upload does not erase.
+Only 2.4 GHz networks work. On a network with a device blocker (Fing), the
+board associates and gets an address but no unicast replies (DNS, NTP, ping)
+until it is allowed, and then needs `wifi reconnect` to clear the spoofed ARP
+entry for the gateway (issue 28).
+
 ## First firmware (issue 20)
 
 `src/main.cpp` started as a USB serial hello: a banner with chip, flash and PSRAM
