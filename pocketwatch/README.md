@@ -1,6 +1,23 @@
 # Pocket-watch case (issue 3)
 
-## Status, 2026-09-28
+## Status, 2026-10-08
+
+**Back cup v1.2 (`back_cup_v12.stl`, issue 16), current design, not yet
+printed.** No front part: the board's curved glass is the top of the case.
+Changes from v1.1: (1) the locating pins are replaced by countersunk screw
+holes through the floor and seats into the board's three standoffs, heads
+sunk 0.5. The Waveshare drawing says M2 but M2 screws do not fit [M], so the
+thread is a parameter, set to **M1.6 x 7** (engages 2.51 of the 3.51
+standoff) until a screw is tried. (2) A lug at 6 o'clock encloses the display
+FPC, frame and USB-C instead of the open notch: inner pocket to y -23.6 (FPC
+lobes reach -23.12), 1.2 wall, outer face at y -24.8, 45 degree underside, and
+a 13.1 x 7.6 recess for the plug overmould back to 0.3 from the receptacle
+face. Inside the recess, above a plugged-in cable, a strip of the frame shows.
+microSD slot and PWR/BOOT holes as v1.1. Checked against the STEP mesh
+(`tools/fitcheck_part.py`): contact only at the seat faces. Print base down,
+no supports. Engraved "v1.2".
+
+## Earlier status, 2026-09-28
 
 The first print (PW-F v1, PW-B v1) did not take the module: its outline is
 not fully round near USB-C. The case is being rebuilt from the back forwards.

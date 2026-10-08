@@ -500,6 +500,160 @@ cup_h     = cup_top_z - cup_bed_z;
 echo(str("back cup: base ", cup_base_d, ", band ", cup_od, ", height ",
          cup_h, ", inside floor to rim ", cup_top_z - bp_top_z));
 
+/* ---------- back cup v1.2 (issue 16) --------------------------------- */
+// No front part: the board's curved glass is the top of the case. v1.2
+// changes v1.1 in two ways.
+//
+// 1. Screws from the outside of the floor into the board's three threaded
+//    standoffs replace the locating pins. The Waveshare drawing says
+//    "3*M2.00-H3.5" but the user's M2 screws do not fit [M], so the thread
+//    is unknown and set here as a parameter, M1.6 for now [?]. Countersunk
+//    (DIN 965), head sunk below the floor face. A countersunk screw's length
+//    runs from the head top, so with the head sunk cup_screw_recess the tip
+//    reaches recess + length above the floor face.
+//
+// 2. The 6 o'clock area is enclosed instead of open. Behind the glass the
+//    display FPC and frame reach y -23.12 at |x| 5..9.8, z -1.6..-4.75, and
+//    the frame and USB-C shell y -23.0 down to z -10.64 [S, mesh]; the 46.8
+//    band is at y -23.4 there and the corners poke through it. A lug on the
+//    band at 6 o'clock puts the wall outside all of it, so only the USB-C
+//    opening remains. Plugs need their overmould to reach about 0.3 from the
+//    receptacle face (y -23.0), so the lug has a recess for it; inside that
+//    recess, above the plug, a strip of the frame stays visible.
+
+cup_screw_d      = 1.6;     // [?] thread, M2 does not fit [M]
+cup_screw_clear  = 1.8;
+cup_screw_head_d = 3.0;     // DIN 965 M1.6
+cup_screw_head_h = (cup_screw_head_d - cup_screw_clear) / 2;   // 90 degrees
+cup_screw_recess = 0.5;
+cup_screw_len    = 7.0;     // [?] M1.6 x 7; see the engagement echo
+cup_screw_engage = cup_screw_recess + cup_screw_len - bp_t - bp_seat_h;
+echo(str("back cup v1.2: M", cup_screw_d, " x ", cup_screw_len,
+         " engages ", cup_screw_engage, " of the ", standoff_h, " standoff"));
+assert(cup_screw_engage >= 1.5, "screw too short for the standoffs");
+assert(cup_screw_engage <= standoff_h - 0.3, "screw would reach the PCB");
+
+lug_pocket_hw  = 10.6;      // FPC/frame |x| 9.79 [S] + 0.8
+lug_pocket_y   = -23.6;     // frame y -23.12 [S] + 0.48
+lug_pocket_z   = -7.9;      // frame bottom -7.49 [S] - 0.4; USB below
+lug_wall       = 1.2;
+lug_y          = lug_pocket_y - lug_wall;      // -24.8, outer face
+lug_hw         = lug_pocket_hw + lug_wall;     // flat face half width
+lug_round      = 2.0;       // corner radius of the flat face
+lug_z_lo       = -10.3;     // full section down to here, then 45 degrees
+plug_recess_y  = -23.3;     // overmould face, 0.3 from the receptacle
+plug_recess_w  = plug_w + 2*plug_clr;          // 13.1
+plug_recess_h  = plug_h + 2*plug_clr;          // 7.6
+cup12_ver      = "v1.2";
+
+module lug2d() {
+    // the band circle and the flat face, hulled, kept to the 6 o'clock side
+    intersection() {
+        hull() {
+            circle(d = cup_od, $fn = 128);
+            translate([0, lug_y + lug_round])
+                offset(r = lug_round)
+                    square([2*(lug_hw - lug_round), 0.01], center = true);
+        }
+        translate([-50, -50]) square([100, 50 - 12]);   // y < -12
+    }
+}
+
+module lug() {
+    d = 4;  // depth of the 45 degree underside
+    intersection() {
+        hull() {
+            translate([0, 0, lug_z_lo]) linear_extrude(height = cup_top_z - lug_z_lo)
+                lug2d();
+            translate([0, 0, lug_z_lo - d]) linear_extrude(height = 0.01)
+                offset(delta = -d) lug2d();
+        }
+        translate([-50, -50, cup_bed_z]) cube([100, 100, cup_h]);
+    }
+}
+
+module back_cup_v12() {
+    difference() {
+        union() {
+            translate([0, 0, cup_bed_z]) rotate_extrude($fn = 128)
+                intersection() {
+                    cup_section();
+                    translate([0, -1]) square([100, cup_h + 1]);
+                }
+            lug();
+        }
+        // cavity: the profile offset inwards, above the floor
+        translate([0, 0, cup_bed_z]) rotate_extrude($fn = 128)
+            intersection() {
+                cup_section(cup_wall);
+                translate([0, bp_t]) square([100, 100]);
+            }
+        // 6 o'clock pocket inside the lug for the FPC and frame
+        translate([0, 0, lug_pocket_z]) linear_extrude(height = 20)
+            translate([0, (lug_pocket_y - 12) / 2])   // y lug_pocket_y .. -12
+                offset(r = 1) square([2*lug_pocket_hw - 2, (-12 - lug_pocket_y) - 2], center = true);
+        // v1.1 inner pockets either side of and below it
+        intersection() {
+            union() {
+                translate([0, 0, cup_notch_z]) cylinder(r = cup_pocket_r, h = 20);
+                translate([0, 0, cup_low_z])
+                    cylinder(r = cup_low_r, h = cup_notch_z - cup_low_z + eps);
+            }
+            union() {
+                translate([-cup_pocket_hw, -cup_od, cup_notch_z])
+                    cube([2*cup_pocket_hw, cup_od/2 + 10, 20]);
+                translate([-cup_low_hw, -cup_od, cup_low_z])
+                    cube([2*cup_low_hw, cup_od/2 + 10, 20]);
+            }
+            translate([-50, -50, -50]) cube([100, 50 - 10, 100]);  // y < -10
+        }
+        // USB-C: shell opening through to the pocket, and the overmould recess
+        translate([0, 0, usb_z]) {
+            port_cut(usb_hole_w, usb_hole_h, usb_hole_r, -cup_od, -15);
+            port_cut(plug_recess_w, plug_recess_h, plug_r, -cup_od, plug_recess_y);
+        }
+        // microSD slot at 9 o'clock, flared outwards (as v1.1)
+        translate([0, sd_y, (sd_z[0] + sd_z[1])/2]) rotate([0, -90, 0])
+            hull() {
+                translate([0, 0, cup_od/2 - cup_wall - 1.5])
+                    linear_extrude(height = 0.01)
+                        square([sd_z[1] - sd_z[0], sd_w], center = true);
+                translate([0, 0, cup_od/2 - sd_flare])
+                    linear_extrude(height = 0.01)
+                        square([sd_z[1] - sd_z[0], sd_w], center = true);
+                translate([0, 0, cup_od/2 + 0.5])
+                    linear_extrude(height = 0.01)
+                        square([sd_z[1] - sd_z[0] + 2*(sd_flare + 0.5),
+                                sd_w + 2*(sd_flare + 0.5)], center = true);
+            }
+        // PWR / BOOT pin holes
+        for (a = btn_angles) rotate(a) translate([15, 0, btn_z])
+            rotate([0, 90, 0]) cylinder(d = btn_hole_d, h = 15, $fn = 24);
+        // countersunk screws through floor and seats into the standoffs
+        for (s = standoffs) translate([s[0], s[1], 0]) {
+            translate([0, 0, cup_bed_z - eps])
+                cylinder(d = cup_screw_clear, h = bp_t + bp_seat_h + 1, $fn = 24);
+            translate([0, 0, cup_bed_z - eps])
+                cylinder(d = cup_screw_head_d, h = cup_screw_recess + eps, $fn = 48);
+            translate([0, 0, cup_bed_z + cup_screw_recess])
+                cylinder(d1 = cup_screw_head_d, d2 = cup_screw_clear,
+                         h = cup_screw_head_h, $fn = 48);
+        }
+        // version on the inside floor, reads from the front
+        translate([0, -3, bp_top_z - ver_d])
+            linear_extrude(height = ver_d + eps)
+                text(cup12_ver, size = cup_ver_size, halign = "center",
+                     valign = "center");
+    }
+    // seats under the standoffs (holes drilled through them above)
+    difference() {
+        for (s = standoffs) translate([s[0], s[1], bp_top_z - eps])
+            cylinder(d = bp_seat_d, h = bp_seat_h + eps, $fn = 48);
+        for (s = standoffs) translate([s[0], s[1], bp_top_z - 1])
+            cylinder(d = cup_screw_clear, h = bp_seat_h + 2, $fn = 24);
+    }
+}
+
 // Outer half-profile in (r, z from the bed), mirrored to a full section so
 // offset() does not eat the axis.
 function cup_profile(top = cup_h) =
@@ -605,6 +759,11 @@ if (part == "front") {
     translate([0, 0, -bp_back_z]) backplate(pins = true);
 } else if (part == "back_cup") {
     translate([0, 0, -cup_bed_z]) back_cup();
+} else if (part == "back_cup_v12") {
+    translate([0, 0, -cup_bed_z]) back_cup_v12();
+} else if (part == "cup12_assembly") {
+    color("lightsteelblue") back_cup_v12();
+    board_envelope(battery = false);
 } else if (part == "cup_assembly") {
     color("lightsteelblue") back_cup();
     board_envelope(battery = false);

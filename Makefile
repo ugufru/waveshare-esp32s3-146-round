@@ -1,6 +1,6 @@
 SCAD = pocketwatch/pocketwatch.scad
 
-stl: pocketwatch/front.stl pocketwatch/back.stl pocketwatch/plate.stl pocketwatch/plate_pins.stl pocketwatch/back_cup.stl
+stl: pocketwatch/front.stl pocketwatch/back.stl pocketwatch/plate.stl pocketwatch/plate_pins.stl pocketwatch/back_cup.stl pocketwatch/back_cup_v12.stl
 
 pocketwatch/front.stl: $(SCAD)
 	openscad -o $@ -D 'part="front"' $(SCAD)
@@ -16,6 +16,9 @@ pocketwatch/plate_pins.stl: $(SCAD)
 
 pocketwatch/back_cup.stl: $(SCAD)
 	openscad -o $@ -D 'part="back_cup"' $(SCAD)
+
+pocketwatch/back_cup_v12.stl: $(SCAD)
+	openscad -o $@ -D 'part="back_cup_v12"' $(SCAD)
 
 issues:
 	python3 tools/issues_html.py render issues.jsonl issues.html roadmap.jsonl --title="waveshare-esp32s3-146-round issues"
