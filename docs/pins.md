@@ -131,6 +131,22 @@ Firmware (src/power.cpp, issue 25):
 - With USB and **no cell**, BAT reads about 4.16 V: that is the charger's
   output with nothing attached, not a battery. [M]
 
+## RTC and IMU
+
+- **PCF85063 RTC (0x51)** runs from 3V3 through diode D2; J2 is a 2-pin
+  footprint for a backup cell, not fitted [S]. So the RTC keeps time only
+  while the board has power: always on USB (the 3.3 V buck is always on,
+  deep sleep included), but a full power-off on battery loses it. Its
+  oscillator-stop flag (seconds bit 7) reports that. Firmware keeps UTC in the
+  time registers and the local offset, in 15-minute steps, in the one RAM
+  byte (0x03). Set it over serial with `t <unix_utc> <offset_min>`; held
+  through a reset [M].
+- **QMI8658 IMU (0x6B):** WHO_AM_I 0x05, revision 0x05 [M]. Axes relative to
+  the screen [M]: **+x towards 12 o'clock, +y towards 3 o'clock, +z out of
+  the back** (right-handed; lying screen-up reads about -0.97 g on z). Gyro
+  zero offset at rest about +2.5 / +1.9 / -0.2 dps; not calibrated out. Its
+  INT1/INT2 are on expander inputs P4/P3, unused so far.
+
 ## Bring-up gotchas
 
 - **Resets behind I2C.** The LCD and touch resets are expander outputs, so

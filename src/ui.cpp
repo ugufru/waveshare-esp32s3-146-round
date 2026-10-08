@@ -1,8 +1,8 @@
 // A round-screen demo that exercises display, touch and LVGL together:
 // a brightness arc around the rim (dragging it drives the real backlight),
 // the value in the centre, a tap counter button, local time and date at
-// 12 o'clock (from the RTC, issue 26) and a bubble-level dot driven by the
-// IMU.
+// 12 o'clock (from the RTC, issue 26) and a spirit-level bubble driven by
+// the IMU.
 // Panel row 0 is 12 o'clock in the pocket-watch case (issue 22), so the
 // arc's gap sits at 6 o'clock over the USB-C port.
 #include "ui.h"

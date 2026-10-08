@@ -12,5 +12,6 @@ void ui_show_message(const char *text);
 // Current brightness set on the ring, 5..100.
 int ui_brightness();
 
-// Bubble-level dot: tilt in g along the screen's x (right) and y (down) axes.
+// Bubble dot: uphill tilt in g along the screen's x (right) and y (down)
+// axes; the dot moves that way, towards the raised edge, like a spirit level.
 void ui_set_tilt(float x, float y);

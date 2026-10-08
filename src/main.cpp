@@ -117,7 +117,11 @@ void loop() {
     next_imu = millis() + 33;
     ImuSample m;
     if (imu_read(m)) {
-      ui_set_tilt(m.ax, m.ay);  // axis mapping to the screen: to be measured
+      // IMU axes (measured, issue 26): +x towards 12 o'clock, +y towards
+      // 3 o'clock, +z out of the back. A reading is positive when that axis
+      // points up, so the uphill direction on screen (x right, y down) is
+      // (+ay, -ax): the dot behaves like a spirit-level bubble.
+      ui_set_tilt(m.ay, -m.ax);
       if ((int32_t)(millis() - next_imu_log) >= 0) {
         next_imu_log = millis() + 1000;
         Serial.printf("imu: a %+.3f %+.3f %+.3f g |a| %.3f  g %+7.2f %+7.2f %+7.2f dps  %.1f C\n",
