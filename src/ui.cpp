@@ -17,6 +17,7 @@ static lv_obj_t *value_label;
 static lv_obj_t *tap_label;
 static lv_obj_t *time_label;
 static lv_obj_t *bat_label;
+static lv_obj_t *net_label;
 static lv_obj_t *date_label;
 static lv_obj_t *bubble;
 static uint32_t taps = 0;
@@ -112,12 +113,19 @@ void ui_build() {
   lv_obj_set_style_text_color(bat_label, lv_color_hex(0x8a94a0), 0);
   lv_label_set_text(bat_label, "bat --");
   lv_obj_align(bat_label, LV_ALIGN_BOTTOM_MID, 0, -40);
+
+  net_label = lv_label_create(scr);
+  lv_obj_set_style_text_color(net_label, lv_color_hex(0x8a94a0), 0);
+  lv_label_set_text(net_label, "");
+  lv_obj_align(net_label, LV_ALIGN_BOTTOM_MID, 0, -60);
 }
 
 void ui_set_battery(float volts, int percent) {
   lv_label_set_text_fmt(bat_label, "bat %d.%02d V  %d%%", (int)volts,
                         (int)(volts * 100 + 0.5f) % 100, percent);
 }
+
+void ui_set_net(const char *text) { lv_label_set_text(net_label, text); }
 
 void ui_show_message(const char *text) {
   lv_obj_t *cover = lv_obj_create(lv_layer_top());

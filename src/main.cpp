@@ -1,7 +1,7 @@
 // Board bring-up and demo. Start-up order matters (docs/pins.md):
 // I2C -> TCA9554 expander (holds the LCD and touch resets) -> display ->
 // touch (the SPD2010 touch side answers only once the display is up) -> RTC,
-// IMU -> LVGL.
+// IMU -> Wi-Fi/NTP -> LVGL.
 // The raw display and touch test patterns of issues 22 and 23 are in git
 // history (commit 6139609).
 #include <Arduino.h>
@@ -12,6 +12,7 @@
 #include "expander.h"
 #include "imu.h"
 #include "lvgl_port.h"
+#include "net.h"
 #include "power.h"
 #include "rtc.h"
 #include "touch.h"
@@ -40,10 +41,59 @@ static bool ok = false;
 static bool imu_ok = false;
 
 // Serial commands, one per line:
-//   t <unix_utc> <offset_min>   set the RTC (offset a multiple of 15)
-// From the Mac: printf 't %d %d\n' $(date +%s) <offset> > /dev/cu.usbmodem101
+//   t <unix_utc> <offset_min>    set the RTC (offset a multiple of 15)
+//   tz <offset_min>              change only the local offset
+//   wifi "<ssid>" "<password>"   store Wi-Fi credentials in NVS and connect
+//   wifi                         Wi-Fi status;  wifi clear   forget them
+//   ntp                          SNTP diagnostics
+// Wi-Fi lines are never echoed back (they carry the password).
+// From a Mac terminal (port name varies, see docs/BUILD.md):
+//   printf 't %d -240\n' $(date +%s) > /dev/cu.usbmodem101
+
+// Splits a "quoted" or bare word off *p; returns false at end of line.
+static bool next_word(char *&p, char *out, size_t cap) {
+  while (*p == ' ') p++;
+  if (!*p) return false;
+  size_t n = 0;
+  if (*p == '"') {
+    for (p++; *p && *p != '"'; p++) if (n < cap - 1) out[n++] = *p;
+    if (*p == '"') p++;
+  } else {
+    for (; *p && *p != ' '; p++) if (n < cap - 1) out[n++] = *p;
+  }
+  out[n] = 0;
+  return true;
+}
+
+static void run_command(char *line) {
+  long long utc;
+  int off;
+  if (strncmp(line, "wifi", 4) == 0 && (line[4] == 0 || line[4] == ' ')) {
+    char *p = line + 4;
+    char ssid[33], pass[65];
+    if (!next_word(p, ssid, sizeof ssid)) net_print_status();
+    else if (strcmp(ssid, "clear") == 0) net_clear_credentials();
+    else if (strcmp(ssid, "reconnect") == 0) net_reconnect(30000);
+    else if (next_word(p, pass, sizeof pass)) net_set_credentials(ssid, pass);
+    else Serial.println("? usage: wifi \"<ssid>\" \"<password>\"  (line not echoed)");
+    memset(line, 0, strlen(line));
+  } else if (sscanf(line, "t %lld %d", &utc, &off) == 2 && off % 15 == 0 && off >= -720 && off <= 840) {
+    const bool w = rtc_set((time_t)utc, off);
+    Serial.printf("rtc: set %lld UTC offset %+d min: %s\n", utc, off, w ? "ok" : "I2C error");
+  } else if (sscanf(line, "tz %d", &off) == 1 && off % 15 == 0 && off >= -720 && off <= 840) {
+    const bool w = rtc_set(time(nullptr), off);
+    Serial.printf("rtc: offset %+d min: %s\n", off, w ? "ok" : "I2C error");
+  } else if (strcmp(line, "ntp") == 0) {
+    net_print_ntp();
+  } else if (strcmp(line, "ntptest") == 0) {
+    net_ntp_test();
+  } else if (line[0]) {
+    Serial.printf("? '%s' (commands: t, tz, wifi, ntp)\n", line);
+  }
+}
+
 static void serial_commands() {
-  static char line[64];
+  static char line[128];
   static size_t len = 0;
   while (Serial.available()) {
     const char c = Serial.read();
@@ -53,14 +103,7 @@ static void serial_commands() {
     }
     line[len] = 0;
     len = 0;
-    long long utc;
-    int off;
-    if (sscanf(line, "t %lld %d", &utc, &off) == 2 && off % 15 == 0 && off >= -720 && off <= 840) {
-      const bool w = rtc_set((time_t)utc, off);
-      Serial.printf("rtc: set %lld UTC offset %+d min: %s\n", utc, off, w ? "ok" : "I2C error");
-    } else if (line[0]) {
-      Serial.printf("? '%s' (commands: t <unix_utc> <offset_min>)\n", line);
-    }
+    run_command(line);
   }
 }
 
@@ -82,6 +125,7 @@ void setup() {
   i2c_scan("after init");
   rtc_begin();
   imu_ok = imu_begin();
+  net_begin();
   if (!lvgl_port_begin()) return;
 
   ui_build();
@@ -111,6 +155,7 @@ void loop() {
   }
 
   serial_commands();
+  net_loop();
 
   static uint32_t next_imu = 0, next_imu_log = 0;
   if (imu_ok && (int32_t)(millis() - next_imu) >= 0) {
@@ -136,6 +181,7 @@ void loop() {
     next_bat = millis() + 5000;
     const float v = power_battery_volts();
     ui_set_battery(v, power_battery_percent(v));
+    ui_set_net(net_ui_status());
     Serial.printf("power: battery %.3f V (%d%%), key %s\n", v, power_battery_percent(v),
                   digitalRead(PIN_KEY_BAT) == LOW ? "down" : "up");
   }

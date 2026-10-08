@@ -6,6 +6,9 @@ void ui_build();
 // Battery readout in the ring's gap at 6 o'clock.
 void ui_set_battery(float volts, int percent);
 
+// Network status line just above the battery readout.
+void ui_set_net(const char *text);
+
 // Full-screen message over everything (e.g. before power-off), drawn at once.
 void ui_show_message(const char *text);
 

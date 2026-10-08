@@ -33,8 +33,10 @@ void power_begin() {
   else if (digitalRead(PIN_KEY_BAT) == LOW) boot_source = BootSource::PowerKey;
   else boot_source = BootSource::Usb;
 
+  // 12-bit, default 11 dB attenuation (0..~3.1 V; Vbat/3 is at most 1.4 V).
+  // analogSetPinAttenuation() before the first read logs "Pin is not
+  // configured as analog channel", so it is not called.
   analogReadResolution(12);
-  analogSetPinAttenuation(PIN_BAT_ADC, ADC_11db);
 }
 
 BootSource power_boot_source() { return boot_source; }
