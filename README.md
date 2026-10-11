@@ -180,10 +180,12 @@ The main gaps:
 
 ## Credits and licences
 
+This project's own firmware, case designs, tools and docs are MIT licensed
+(see [LICENSE](LICENSE)). These parts keep their own licences:
+
 - `lib/esp_lcd_spd2010/` is Espressif's SPD2010 display driver, Apache-2.0,
   copied unmodified (see its `VENDORED.md`).
 - `hardware/` is the desktop case by adenpereira99 from
   [Thingiverse thing 7386073](https://www.thingiverse.com/thing:7386073),
   CC BY-SA, kept for reference.
 - The PDFs in `docs/datasheets/` are Waveshare's.
-- A licence for the rest of this project has not been chosen yet.
