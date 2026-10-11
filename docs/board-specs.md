@@ -1,7 +1,7 @@
 # Waveshare ESP32-S3-Touch-LCD-1.46: specs
 
-Checked 2026-09-28 against the official Waveshare structural drawings (copies in
-`docs/datasheets/`).
+Checked 2026-09-28 against the official Waveshare structural drawings (links
+under Sources below).
 
 ## Sources
 

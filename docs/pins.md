@@ -1,8 +1,8 @@
 # Pin map and bring-up notes
 
-Board: Waveshare ESP32-S3-Touch-LCD-1.46. Source:
-`docs/datasheets/ESP32-S3-Touch-LCD-1.46-schematic.pdf`, page 1 (the GPIO
-table in the middle of the sheet and the "IO Extension" block bottom left),
+Board: Waveshare ESP32-S3-Touch-LCD-1.46. Source: Waveshare's
+[schematic](https://files.waveshare.com/wiki/ESP32-S3-Touch-LCD-1.46/ESP32-S3-Touch-LCD-1.46.pdf),
+page 1 (the GPIO table in the middle of the sheet and the "IO Extension" block bottom left),
 read 2026-10-04. Code uses `include/board_pins.h`, which carries the same
 values; change both together.
 

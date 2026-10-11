@@ -1,5 +1,5 @@
 // Pin map for the Waveshare ESP32-S3-Touch-LCD-1.46 (issue 19).
-// Source: docs/datasheets/ESP32-S3-Touch-LCD-1.46-schematic.pdf, page 1 GPIO
+// Source: Waveshare's schematic (link in docs/pins.md), page 1 GPIO
 // table and the IO Extension block. Notes and gotchas: docs/pins.md.
 #pragma once
 
