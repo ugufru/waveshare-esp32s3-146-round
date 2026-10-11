@@ -17,11 +17,20 @@ The firmware brings up the whole board and runs a demo on the round screen:
 This is a work in progress. It runs on USB power today; running from a
 battery is not finished yet (see [What's not done](#whats-not-done)).
 
+<p align="center">
+  <img src="docs/images/demo.jpg" width="420" alt="The round screen in the printed back cup, showing the time, a yellow brightness ring at 77%, a tap counter, Wi-Fi signal and battery voltage">
+</p>
+
 ## What you need
+
+<p align="center">
+  <img src="docs/images/board-front.jpg" width="280" alt="The board from the front: a round black cover glass with the USB-C plug at the bottom">
+  <img src="docs/images/board-back.jpg" width="280" alt="The back of the board: ESP32-S3, BAT and RTC connectors, PWR and BOOT buttons, a speaker, a 2x10 header and USB-C at the bottom">
+</p>
 
 | Item | Notes |
 | --- | --- |
-| Waveshare ESP32-S3-Touch-LCD-1.46, **with cover glass** (SKU 29565) | [waveshare.com/esp32-s3-touch-lcd-1.46.htm](https://www.waveshare.com/esp32-s3-touch-lcd-1.46.htm). The firmware also suits the glassless 1.46B (SKU 29564), but the case does not: that board falls through it. |
+| Waveshare ESP32-S3-Touch-LCD-1.46, **with cover glass** (SKU 29565) | [waveshare.com/esp32-s3-touch-lcd-1.46.htm](https://www.waveshare.com/esp32-s3-touch-lcd-1.46.htm). The firmware should also suit the glassless 1.46B (SKU 29564), but the case is built around the cover glass and has not been tried with it. |
 | USB-C cable that carries data | Some charge-only cables power the board but the computer never sees it. |
 | A computer with Python 3 and git | macOS or Linux. Windows should work with PlatformIO but has not been tried. |
 | A 3D printer (optional) | Only for the case. |
@@ -150,6 +159,13 @@ yet: Waveshare's drawing says the board's mounting posts take M2 screws, but
 M2 screws do not fit them.
 
 The other STLs in `pocketwatch/` are earlier versions, kept for reference.
+The photo at the top shows v1.2. This is v1.1, running the first display
+test pattern:
+
+<p align="center">
+  <img src="docs/images/display-test.jpg" width="320" alt="The board in the white v1.1 back cup with a USB-C cable plugged in, showing a test pattern of red, green, blue and yellow blocks on crossed lines">
+</p>
+
 [pocketwatch/README.md](pocketwatch/README.md) has the history and
 measurements. To change the design, edit `pocketwatch/pocketwatch.scad` and
 rebuild the STLs with `make stl` (needs [OpenSCAD](https://openscad.org/)).
