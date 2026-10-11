@@ -1,9 +1,11 @@
 # Pocket-watch case (issue 3)
 
-## Status, 2026-10-08
+## Status, 2026-10-11
 
-**Back cup v1.2 (`back_cup_v12.stl`, issue 16), current design, not yet
-printed.** No front part: the board's curved glass is the top of the case.
+**Back cup v1.2 (`back_cup_v12.stl`, issue 16), current design, printed and
+fits.** The board is not screwed in yet: the standoff thread is still being
+identified (issue 36). There is no room for the LiPo cell behind the board
+yet (issue 37). No front part: the board's curved glass is the top of the case.
 Changes from v1.1: (1) the locating pins are replaced by countersunk screw
 holes through the floor and seats into the board's three standoffs, heads
 sunk 0.5. The Waveshare drawing says M2 but M2 screws do not fit [M], so the
@@ -22,12 +24,16 @@ no supports. Engraved "v1.2".
 The first print (PW-F v1, PW-B v1) did not take the module: its outline is
 not fully round near USB-C. The case is being rebuilt from the back forwards.
 
-**Back cup v1.1 (`back_cup.stl`), current.** v1.1 adds a microSD slot at
+The parts below are superseded by v1.2. Where they say the board's standoffs
+are M2, that came from Waveshare's drawing and turned out to be wrong: M2
+screws do not fit them (issue 36).
+
+**Back cup v1.1 (`back_cup.stl`).** v1.1 adds a microSD slot at
 9 o'clock (the card goes in between the PCB and the display). Grown from PW-PP after its pins
 lined the board up. 38.1 (1.5 in) flat base, 2 mm wall curving up to a 46.8
 band, rim 0.2 below the back of the glass (inside floor to rim 11.7, 14.1
 tall). Notch at 6 o'clock for the display FPC and frame, with the 9.6 x 3.9
-USB-C opening below it. Pin holes for PWR and BOOT. "v1.0" is engraved on
+USB-C opening below it. Pin holes for PWR and BOOT. "v1.1" is engraved on
 the inside floor. Print base down, no supports.
 
 **Backplate, PW-P v1 (`plate.stl`, issue 15).** The board screws to it
@@ -103,7 +109,8 @@ PWR is reached with a SIM tool or paperclip through the pinhole in the back.
 - The battery clears the PWR tube by 0.21 and the lower posts by 0.35 and
   0.85 (echoed at render time).
 
-Not checked yet: anything on a real print. Values tagged `[?]` in the source
+On a real print, this v1 front and back did not take the module (see the
+2026-09-28 status above). Values tagged `[?]` in the source
 are assumptions: the cell's size (especially thickness), the standoff bore,
 and USB-C plug overmould size.
 
